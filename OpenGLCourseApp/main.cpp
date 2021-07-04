@@ -13,39 +13,53 @@
 const GLint WIDTH = 800, HEIGHT = 600;
 const float toRadians = 3.14159265f / 180.0f;
 
-GLuint VAO, VBO, shader, uniformModel, modelScale;
+GLuint VAO, VBO, shader, uniformModel;
 
 bool direction = true;
 float triOffset = 0.0f;
 float triMaxOffset = 0.7f;
 float triIncrement = 0.0005f;
 
+float angleOffset = 0.0f;
+float angleMaxOffset = 360.0f;
+float angleIncrement = 0.005f;
+
+bool scaleDirection = true;
+float scaleOffset = 0.0f;
+float scaleMaxOffset = 1.0f;
+float scaleIncrement = 0.0001f;
+
 // Vertex Shader
-static const char* vShader = "                                          \n\
-#version 330                                                            \n\
-                                                                        \n\
-// 0 is the location id of this input variable                          \n\
-layout(location = 0) in vec3 pos;                                       \n\
-                                                                        \n\
-uniform mat4 model;                                                     \n\
-uniform float scale;                                                    \n\
-                                                                        \n\
-void main()                                                             \n\
-{                                                                       \n\
-    // gl_position is a built in output variable                        \n\
-    gl_Position = model * vec4(scale * pos.x, scale * pos.y, pos.z, 1.0);   \n\
+static const char* vShader = "                                  \n\
+#version 330                                                    \n\
+                                                                \n\
+// 0 is the location id of this input variable                  \n\
+layout(location = 0) in vec3 pos;                               \n\
+                                                                \n\
+out vec4 vColour;                                               \n\
+                                                                \n\
+uniform mat4 model;                                             \n\
+                                                                \n\
+void main()                                                     \n\
+{                                                               \n\
+    // gl_position is a built in output variable                \n\
+    gl_Position = model * vec4(pos, 1.0);                       \n\
+    vColour = vec4(clamp(pos, 0.0f, 1.0f), 1.0f);               \n\
 }";
 
 // Fragment Shader
 static const char* fShader = "                                  \n\
 #version 330                                                    \n\
                                                                 \n\
-// 0 is the location id of this input variable                  \n\
+                                                                \n\
+in vec4 vColour;                                                \n\
+// Because this is the only ouput, GLSL will assume this is the \n\
+// colour it needs                                              \n\
 out vec4 colour;                                                \n\
                                                                 \n\
 void main()                                                     \n\
 {                                                               \n\
-    colour = vec4(1.0, 0.0, 0.0, 1.0);                          \n\
+    colour = vColour;                                           \n\
 }                                                               \n\
 ";
 
@@ -110,7 +124,6 @@ void CompiledShaders() {
 
     // Get the uniform from the shader
     uniformModel = glGetUniformLocation(shader, "model");
-    modelScale = glGetUniformLocation(shader, "scale");
 }
 
 void CreateTriangle() {
@@ -135,6 +148,8 @@ void CreateTriangle() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
 
+    // This attaches to a buffer in the GPU
+    // The shader can then pick this up
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(0);
@@ -186,16 +201,22 @@ int main() {
     while (!glfwWindowShouldClose(mainWindow)) {
         glfwPollEvents();
 
-        if (direction) {
-            // Going to right
-            triOffset += triIncrement;
-        }
-        else {
-            triOffset -= triIncrement;
-        }
-
+        // Translation offset
+        triOffset += direction ? triIncrement : -triIncrement;
         if (abs(triOffset) >= triMaxOffset) {
             direction = !direction;
+        }
+
+        // Rotation offset
+        angleOffset += angleIncrement;
+        if (angleOffset > angleMaxOffset) {
+            angleOffset = 0.0f;
+        }
+
+        // Scaling offset
+        scaleOffset += scaleDirection ? scaleIncrement : -scaleIncrement;
+        if (abs(scaleOffset) > scaleMaxOffset) {
+            scaleDirection = !scaleDirection;
         }
         
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -203,11 +224,11 @@ int main() {
 
         // Assign shader
         glUseProgram(shader);
-
-            glUniform1f(modelScale, 0.1f);
-
             glm::mat4 model(1.0f);
-            model = glm::translate(model, glm::vec3(triOffset, 0.0f, 0.0f));
+            
+            // model = glm::scale(model, glm::vec3(scaleOffset, scaleOffset, 1.0f));
+            // model = glm::translate(model, glm::vec3(triOffset, 0.0f, 0.0f));
+            // model = glm::rotate(model, angleOffset * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
 
             glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));        
 
