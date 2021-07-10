@@ -14,11 +14,13 @@ void Mesh::CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int num
     // The 1 in the first param is how many to generate
     glGenVertexArrays(1, &VAO);
     // Bind the vertex array with that ID
+    // We do to this to allow access to the buffer sinces it locked upon creation
     glBindVertexArray(VAO);
 
     glGenBuffers(1, &IBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
     // Copy the data over to that buffer
+    // creates and initializes a buffer object's data store
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices[0]) * numOfIndices, indices, GL_STATIC_DRAW);
 
     glGenBuffers(1, &VBO);
@@ -27,15 +29,14 @@ void Mesh::CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int num
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[0]) * numOfVertices, vertices, GL_STATIC_DRAW);
 
     // How to read the vertices data
-    // This 0 is refering to the 0 location id in the vertex shader
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    // Enable the buffer
     glEnableVertexAttribArray(0);
 
-    // This attaches to a buffer in the GPU
-    // The shader can then pick this up
+    // Unbind the buffers
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 }
 
 void Mesh::RenderMesh() {

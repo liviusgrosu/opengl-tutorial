@@ -44,6 +44,7 @@ int GLWindow::Initialize() {
         return 1;
     }
 
+    // Check the depth information so that fragments are not overlapping incorrectly
     glEnable(GL_DEPTH_TEST);
 
     // Setup viewport size
