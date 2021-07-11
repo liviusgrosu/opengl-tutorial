@@ -2,6 +2,9 @@
 GLWindow::GLWindow() {
     width = 800;
     height = 600;
+    
+    xChange = 0.0f;
+    yChange = 0.0f;
 
     for (size_t i = 0; i < 1024; i++) {
         keys[i] = 0;
@@ -72,16 +75,22 @@ void GLWindow::CreateCallbacks() {
     glfwSetCursorPosCallback(mainWindow, HandleMouse);
 }
 
-GLfloat GLWindow::getXChange() {
-    GLfloat change = xChange;
-    xChange = .0f;
-    return change;
+GLfloat GLWindow::GetXChange() {
+    GLfloat currChange;
+    if (xChange >= 10000.0f || xChange <= -10000.0f) currChange = 0.0f;
+    else currChange = xChange;
+
+    xChange = 0.0f;
+    return currChange;
 }
 
-GLfloat GLWindow::getYChange() {
-    GLfloat change = yChange;
-    yChange = .0f;
-    return change;
+GLfloat GLWindow::GetYChange() {
+    GLfloat currChange;
+    if (yChange >= 10000.0f || yChange <= -10000.0f) currChange = 0.0f;
+    else currChange = yChange;
+
+    yChange = 0.0f;
+    return currChange;
 }
 
 void GLWindow::HandleKeys(GLFWwindow* window, int key, int code, int action, int mode) {

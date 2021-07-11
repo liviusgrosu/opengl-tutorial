@@ -13,12 +13,18 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include "GLWindow.h"
+#include "Camera.h"
 
 const float toRadians = 3.14159265f / 180.0f;
 
 std::vector<Mesh*> meshList;
 std::vector<Shader*> shaderList;
 GLWindow mainWindow;
+Camera mainCamera;
+
+GLfloat deltaTime = .0f;
+GLfloat lastTime = .0f;
+
 
 // Vertex Shader
 static const char* vShader = "shaders/shader.vert";
@@ -64,11 +70,17 @@ int main() {
     CreateObjects();
     CreateShaders();
 
-    GLuint uniformProjection = 0, uniformModel = 0;
+    mainCamera = Camera(glm::vec3(.0f, .0f, .0f), glm::vec3(.0f, 1.0f, .0f), -90.0f, .0f, 5.0f, 0.1f);
+
+    GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0;
 
     glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.GetBufferWidth() / (GLfloat)mainWindow.GetBufferHeight(), 0.1f, 100.0f);
 
     while (!mainWindow.GetShouldClose()) {
+        GLfloat now = glfwGetTime();
+        deltaTime = now - lastTime;
+        lastTime = now;
+
         // Handle window resizing, moving, menu operations, etc...
         glfwPollEvents();
         
@@ -81,12 +93,15 @@ int main() {
         shaderList[0]->UseShader();
         {
             glm::mat4 model(1.0f);
+            mainCamera.KeyControl(mainWindow.GetKeys(), deltaTime);
+            mainCamera.MouseControl(mainWindow.GetXChange(), mainWindow.GetYChange());
 
             model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
             model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
             // Pass the model and projection to the shaders
             glUniformMatrix4fv(shaderList[0]->GetModelLocation(), 1, GL_FALSE, glm::value_ptr(model));
             glUniformMatrix4fv(shaderList[0]->GetProjectionLocation(), 1, GL_FALSE, glm::value_ptr(projection));
+            glUniformMatrix4fv(shaderList[0]->GetViewLocation(), 1, GL_FALSE, glm::value_ptr(mainCamera.CalculateViewMatrix()));
             // Draw the mesh
             meshList[0]->RenderMesh();
 

@@ -14,9 +14,9 @@ public:
     GLfloat GetBufferHeight() { return bufferHeight; }
 
     bool GetShouldClose() { return glfwWindowShouldClose(mainWindow); }
-    bool* getKeys() { return keys; }
-    GLfloat getXChange();
-    GLfloat getYChange();
+    bool* GetKeys() { return keys; }
+    GLfloat GetXChange();
+    GLfloat GetYChange();
 
     void SwapBuffers() { glfwSwapBuffers(mainWindow); }
 
