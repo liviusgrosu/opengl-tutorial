@@ -11,7 +11,7 @@ class Camera
 public:
     Camera() {};
     Camera(glm::vec3 position, glm::vec3 up, GLfloat yaw, GLfloat pitch, GLfloat movementSpeed, GLfloat turnSpeed);
-    
+
     void KeyControl(bool* keys, GLfloat deltaTime);
     void MouseControl(GLfloat xChange, GLfloat yChange);
 

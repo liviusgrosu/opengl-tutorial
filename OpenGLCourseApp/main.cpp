@@ -51,11 +51,11 @@ void CreateObjects() {
     };
 
     GLfloat vertices[] = {
-    //  x       y       z       s       t
-        -1.0f,  -1.0f,  0.0f,   0.0f,   0.0f,
-        0.0f,   -1.0f,  1.0f,   0.5f,   0.0f,
-        1.0f,   -1.0f,  0.0f,   1.0f,   0.0f,
-        0.0f,   1.0f,   0.0f,   0.5f,   1.0f,
+        //  x       y       z       s       t
+            -1.0f,  -1.0f,  0.0f,   0.0f,   0.0f,
+            0.0f,   -1.0f,  1.0f,   0.5f,   0.0f,
+            1.0f,   -1.0f,  0.0f,   1.0f,   0.0f,
+            0.0f,   1.0f,   0.0f,   0.5f,   1.0f,
     };
 
     Mesh* obj1 = new Mesh();
@@ -87,10 +87,7 @@ int main() {
     dirtTexture = Texture((char*)"Textures/dirt.png");
     dirtTexture.LoadTexture();
 
-    mainLight = Light();
-
-    GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformAmbientIntensity = 0, uniformAmbientColour = 0;
-
+    mainLight = Light(1.0f, 1.0f, 1.0f, 0.5f);
     glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.GetBufferWidth() / (GLfloat)mainWindow.GetBufferHeight(), 0.1f, 100.0f);
 
     while (!mainWindow.GetShouldClose()) {
@@ -100,7 +97,9 @@ int main() {
 
         // Handle window resizing, moving, menu operations, etc...
         glfwPollEvents();
-        
+        mainCamera.KeyControl(mainWindow.GetKeys(), deltaTime);
+        mainCamera.MouseControl(mainWindow.GetXChange(), mainWindow.GetYChange());
+
         // Clear the colour
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         // Clear the depth buffer so it doesnt use old values
@@ -109,9 +108,8 @@ int main() {
         // Assign shader to the rendering states
         shaderList[0]->UseShader();
         {
+            mainLight.UseLight(shaderList[0]->GetAmbientIntensityLocation(), shaderList[0]->GetAmbientColourLocation());
             glm::mat4 model(1.0f);
-            mainCamera.KeyControl(mainWindow.GetKeys(), deltaTime);
-            mainCamera.MouseControl(mainWindow.GetXChange(), mainWindow.GetYChange());
 
             model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
             model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
@@ -119,7 +117,7 @@ int main() {
             glUniformMatrix4fv(shaderList[0]->GetModelLocation(), 1, GL_FALSE, glm::value_ptr(model));
             glUniformMatrix4fv(shaderList[0]->GetProjectionLocation(), 1, GL_FALSE, glm::value_ptr(projection));
             glUniformMatrix4fv(shaderList[0]->GetViewLocation(), 1, GL_FALSE, glm::value_ptr(mainCamera.CalculateViewMatrix()));
-            mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColour);
+            
             brickTexture.UseTexture();
             // Draw the mesh
             meshList[0]->RenderMesh();
@@ -127,7 +125,7 @@ int main() {
             model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(0.0f, 1.0f, -2.5f));
             model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
-            glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(shaderList[0]->GetModelLocation(), 1, GL_FALSE, glm::value_ptr(model));
             dirtTexture.UseTexture();
             meshList[1]->RenderMesh();
         }

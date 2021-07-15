@@ -7,7 +7,7 @@ Light::Light() {
 
 Light::Light(GLfloat red, GLfloat blue, GLfloat green, GLfloat ambientIntensity) {
     colour = glm::vec3(red, blue, green);
-    ambientIntensity = ambientIntensity;
+    this->ambientIntensity = ambientIntensity;
 }
 
 void Light::UseLight(GLfloat ambientIntensityLocation, GLfloat ambientColourLocation) {
