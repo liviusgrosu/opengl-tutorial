@@ -1,8 +1,9 @@
 #version 330
 
-layout (location = 0) in vec3 pos;
-layout (location = 1) in vec2 tex;
-layout (location = 2) in vec3 norm;
+// 0 is the location id of this input variable
+layout(location = 0) in vec3 pos;
+layout(location = 1) in vec2 tex;
+layout(location = 2) in vec3 norm;
 
 out vec4 vCol;
 out vec2 TexCoord;
@@ -19,5 +20,5 @@ void main()
 	
 	TexCoord = tex;
 	
-	Normal = mat3(transpose(invesrse(model))) * norm;
+	Normal = mat3(transpose(inverse(model))) * norm;
 }

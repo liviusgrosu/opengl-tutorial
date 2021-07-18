@@ -21,7 +21,6 @@ GLWindow::GLWindow(GLint windowWidth, GLint windowHeight) {
 
 int GLWindow::Initialize() {
     if (!glfwInit()) {
-        // GLFW init failed
         printf("GLFW init failed...");
         glfwTerminate();
         return 1;
@@ -29,7 +28,6 @@ int GLWindow::Initialize() {
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    // Don't want to use open depricated functions
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
@@ -40,18 +38,13 @@ int GLWindow::Initialize() {
         return 1;
     }
 
-    // Get buffer size information
     glfwGetFramebufferSize(mainWindow, &bufferWidth, &bufferHeight);
 
-    // Set context for GLEW to use
     glfwMakeContextCurrent(mainWindow);
 
-    // Handle Key + Mouse Input
     CreateCallbacks();
-    // Hide the cursor and keep in the middle
     glfwSetInputMode(mainWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    // Allow modern extensions features
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
         printf("GLEW init failed...");
@@ -60,17 +53,14 @@ int GLWindow::Initialize() {
         return 1;
     }
 
-    // Check the depth information so that fragments are not overlapping incorrectly
     glEnable(GL_DEPTH_TEST);
 
-    // Setup viewport size
     glViewport(0, 0, bufferWidth, bufferHeight);
     
     glfwSetWindowUserPointer(mainWindow, this);
 }
 
 void GLWindow::CreateCallbacks() {
-    // Create the input callbacks for the user pointer object
     glfwSetKeyCallback(mainWindow, HandleKeys);
     glfwSetCursorPosCallback(mainWindow, HandleMouse);
 }
@@ -97,7 +87,6 @@ void GLWindow::HandleKeys(GLFWwindow* window, int key, int code, int action, int
     GLWindow* theWindow = static_cast<GLWindow*>(glfwGetWindowUserPointer(window));
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        // Exit the application
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
 
@@ -121,7 +110,6 @@ void GLWindow::HandleMouse(GLFWwindow* window, double xPos, double yPos) {
     }
 
     theWindow->xChange = xPos - theWindow->lastX;
-    // We do this to stop inverted y movement
     theWindow->yChange = theWindow->lastY - yPos;
 
     theWindow->lastX = xPos;

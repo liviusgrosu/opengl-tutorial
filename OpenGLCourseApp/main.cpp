@@ -12,7 +12,7 @@
 #include <glm\gtc\matrix_transform.hpp>
 #include <glm\gtc\type_ptr.hpp>
 
-#include "Window.h"
+#include "GLWindow.h"
 #include "Mesh.h"
 #include "Shader.h"
 #include "Camera.h"
@@ -21,7 +21,7 @@
 
 const float toRadians = 3.14159265f / 180.0f;
 
-Window mainWindow;
+GLWindow mainWindow;
 std::vector<Mesh*> meshList;
 std::vector<Shader> shaderList;
 Camera camera;
@@ -40,6 +40,51 @@ static const char* vShader = "Shaders/shader.vert";
 // Fragment Shader
 static const char* fShader = "Shaders/shader.frag";
 
+void CalculateAverageNormals(unsigned int *indices, unsigned int indiceCount, GLfloat *vertices, 
+								unsigned int verticesDataLength, unsigned int vertexDataLength, unsigned int normalOffset) {
+	for (size_t i = 0; i < indiceCount; i += 3) {
+		unsigned int in0 = indices[i] * vertexDataLength;
+		unsigned int in1 = indices[i + 1] * vertexDataLength;
+		unsigned int in2 = indices[i + 2] * vertexDataLength;
+		
+		// Calculate lines of the triangle to get the normal
+		glm::vec3 v1(vertices[in1] - vertices[in0], vertices[in1 + 1] - vertices[in0 + 1], vertices[in1 + 2] - vertices[in0 + 2]);
+		glm::vec3 v2(vertices[in2] - vertices[in0], vertices[in2 + 1] - vertices[in0 + 1], vertices[in2 + 2] - vertices[in0 + 2]);
+		glm::vec3 normal = glm::cross(v1, v2);
+		normal = glm::normalize(normal);
+
+		// Jump straight to the normal data in vertices
+		in0 += normalOffset;
+		in1 += normalOffset;
+		in2 += normalOffset;
+
+		// Provide the normal data
+		vertices[in0] += normal.x;
+		vertices[in0 + 1] += normal.y;
+		vertices[in0 + 2] += normal.z;
+
+		vertices[in1] += normal.x;
+		vertices[in1 + 1] += normal.y;
+		vertices[in1 + 2] += normal.z;
+
+		vertices[in2] += normal.x;
+		vertices[in2 + 1] += normal.y;
+		vertices[in2 + 2] += normal.z;
+	}
+
+	// Go through all the vertices and normalize again
+	// We do this because indices can have more then 1 vertex and we have added them together to get their normal
+	// We need to normalize that sum
+	for (size_t i = 0; i < verticesDataLength / vertexDataLength; i++) {
+		unsigned int nOffset = i * vertexDataLength + normalOffset;
+		glm::vec3 vec(vertices[nOffset], vertices[nOffset + 1], vertices[nOffset + 2]);
+		vec = glm::normalize(vec);
+		vertices[nOffset] = vec.x;
+		vertices[nOffset + 1] = vec.y;
+		vertices[nOffset + 2] = vec.z;
+	}
+}
+
 void CreateObjects() 
 {
 	unsigned int indices[] = {
@@ -50,19 +95,21 @@ void CreateObjects()
 	};
 
 	GLfloat vertices[] = {
-	//	x      y      z			u	  v
-		-1.0f, -1.0f, 0.0f,		0.0f, 0.0f,	
-		0.0f, -1.0f, 1.0f,		0.5f, 0.0f,
-		1.0f, -1.0f, 0.0f,		1.0f, 0.0f,
-		0.0f, 1.0f, 0.0f,		0.5f, 1.0f
+		//	x		y		z		u		v		nx		ny		nz
+			-1.0f,	-1.0f,	0.0f,	0.0f,	0.0f,	0.0f,	0.0f,	0.0f,
+			0.0f,	-1.0f,	1.0f,	0.5f,	0.0f,	0.0f,	0.0f,	0.0f,
+			1.0f,	-1.0f,	0.0f,	1.0f,	0.0f,	0.0f,	0.0f,	0.0f,
+			0.0f,	1.0f,	0.0f,	0.5f,	1.0f,	0.0f,	0.0f,	0.0f
 	};
 
+	CalculateAverageNormals(indices, 12, vertices, 32, 8, 5);
+
 	Mesh *obj1 = new Mesh();
-	obj1->CreateMesh(vertices, indices, 20, 12);
+	obj1->CreateMesh(vertices, indices, 32, 12);
 	meshList.push_back(obj1);
 
 	Mesh *obj2 = new Mesh();
-	obj2->CreateMesh(vertices, indices, 20, 12);
+	obj2->CreateMesh(vertices, indices, 32, 12);
 	meshList.push_back(obj2);
 }
 
@@ -75,38 +122,36 @@ void CreateShaders()
 
 int main() 
 {
-	mainWindow = Window(800, 600);
-	mainWindow.Initialise();
+	mainWindow = GLWindow(800, 600);
+	mainWindow.Initialize();
 
 	CreateObjects();
 	CreateShaders();
 
 	camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 5.0f, 0.5f);
 
-	brickTexture = Texture("Textures/brick.png");
+	brickTexture = Texture((char*)"Textures/brick.png");
 	brickTexture.LoadTexture();
-	dirtTexture = Texture("Textures/dirt.png");
+	dirtTexture = Texture((char*)"Textures/dirt.png");
 	dirtTexture.LoadTexture();
 
-	mainLight = Light(1.0f, 1.0f, 1.0f, 0.5f);
+	mainLight = Light(1.0f, 1.0f, 1.0f, 0.5f, 2.0f, -1.0f, -2.0f, 1.0f);
 
-	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformAmbientIntensity = 0, uniformAmbientColour = 0;
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (GLfloat)mainWindow.getBufferWidth() / mainWindow.getBufferHeight(), 0.1f, 100.0f);
+	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformAmbientIntensity = 0, 
+			uniformAmbientColour = 0, uniformDirection = 0, uniformDiffuseIntensity = 0;
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (GLfloat)mainWindow.GetBufferWidth() / mainWindow.GetBufferHeight(), 0.1f, 100.0f);
 
-	// Loop until window closed
-	while (!mainWindow.getShouldClose())
+	while (!mainWindow.GetShouldClose())
 	{
-		GLfloat now = glfwGetTime(); // SDL_GetPerformanceCounter();
-		deltaTime = now - lastTime; // (now - lastTime)*1000/SDL_GetPerformanceFrequency();
+		GLfloat now = glfwGetTime();
+		deltaTime = now - lastTime;
 		lastTime = now;
 
-		// Get + Handle User Input
 		glfwPollEvents();
 
-		camera.keyControl(mainWindow.getsKeys(), deltaTime);
-		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());
+		camera.keyControl(mainWindow.GetKeys(), deltaTime);
+		camera.mouseControl(mainWindow.GetXChange(), mainWindow.GetYChange());
 
-		// Clear the window
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -116,9 +161,11 @@ int main()
 		uniformView = shaderList[0].GetViewLocation();
 		uniformAmbientColour = shaderList[0].GetAmbientColourLocation();
 		uniformAmbientIntensity = shaderList[0].GetAmbientIntensityLocation();
+		uniformDirection = shaderList[0].GetDirectionLocation();
+		uniformDiffuseIntensity = shaderList[0].GetDiffuseIntensityLocation();
 
-		mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColour);
-
+		mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColour, uniformDiffuseIntensity, uniformDirection);
+			
 		glm::mat4 model(1.0f);	
 
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
@@ -138,7 +185,7 @@ int main()
 
 		glUseProgram(0);
 
-		mainWindow.swapBuffers();
+		mainWindow.SwapBuffers();
 	}
 
 	return 0;
