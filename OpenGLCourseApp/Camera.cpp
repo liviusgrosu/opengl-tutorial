@@ -62,7 +62,7 @@ void Camera::mouseControl(GLfloat xChange, GLfloat yChange)
 	update();
 }
 
-glm::mat4 Camera::calculateViewMatrix()
+glm::mat4 Camera::CalculateViewMatrix()
 {
 	return glm::lookAt(position, position + front, up);
 }
