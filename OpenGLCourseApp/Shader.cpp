@@ -7,6 +7,7 @@ Shader::Shader()
 	uniformProjection = 0;
 
     pointLightCount = 0;
+    spotLightCount = 0;
 }
 
 void Shader::CreateFromString(const char* vertexCode, const char* fragmentCode)
@@ -57,19 +58,19 @@ GLuint Shader::GetViewLocation() {
 }
 
 GLuint Shader::GetAmbientColourLocation() {
-	return uniformDirectionLight.uniformColour;
+	return uniformDirectionalLight.uniformColour;
 }
 
 GLuint Shader::GetAmbientIntensityLocation() {
-	return uniformDirectionLight.uniformAmbientIntensity;
+	return uniformDirectionalLight.uniformAmbientIntensity;
 }
 
 GLuint Shader::GetDiffuseIntensityLocation() {
-	return uniformDirectionLight.uniformDiffuseIntensity;
+	return uniformDirectionalLight.uniformDiffuseIntensity;
 }
 
 GLuint Shader::GetDirectionLocation() {
-	return uniformDirectionLight.uniformDirection;
+	return uniformDirectionalLight.uniformDirection;
 }
 
 GLuint Shader::GetCameraPositionLocation() {
@@ -86,8 +87,8 @@ GLuint Shader::GetShininessLocation() {
 
 void Shader::SetDirectionalLight(DirectionalLight* directionalLight)
 {
-    directionalLight->UseLight(uniformDirectionLight.uniformAmbientIntensity, uniformDirectionLight.uniformColour, 
-                                uniformDirectionLight.uniformDiffuseIntensity, uniformDirectionLight.uniformDirection);
+    directionalLight->UseLight(uniformDirectionalLight.uniformAmbientIntensity, uniformDirectionalLight.uniformColour, 
+                                uniformDirectionalLight.uniformDiffuseIntensity, uniformDirectionalLight.uniformDirection);
 }
 
 void Shader::SetPointLights(PointLight* pointLight, unsigned int lightCount) {
@@ -101,6 +102,21 @@ void Shader::SetPointLights(PointLight* pointLight, unsigned int lightCount) {
         pointLight[i].UseLight(uniformPointLight[i].uniformAmbientIntensity, uniformPointLight[i].uniformColour, 
                                 uniformPointLight[i].uniformDiffuseIntensity, uniformPointLight[i].uniformPosition,
                                 uniformPointLight[i].uniformConstant, uniformPointLight[i].uniformLinear, uniformPointLight[i].uniformExponent);
+    }
+}
+
+void Shader::SetSpotLights(SpotLight* spotLight, unsigned int lightCount)
+{
+    if (lightCount > MAX_SPOT_LIGHTS) {
+        lightCount = MAX_SPOT_LIGHTS;
+    }
+
+    glUniform1i(uniformSpotLightCount, lightCount);
+
+    for (size_t i = 0; i < lightCount; i++) {
+        spotLight[i].UseLight(uniformSpotLight[i].uniformAmbientIntensity, uniformSpotLight[i].uniformColour,
+            uniformSpotLight[i].uniformDiffuseIntensity, uniformSpotLight[i].uniformPosition, uniformSpotLight[i].uniformDirection,
+            uniformSpotLight[i].uniformConstant, uniformSpotLight[i].uniformLinear, uniformSpotLight[i].uniformExponent, uniformSpotLight[i].uniformEdge);
     }
 }
 
@@ -152,16 +168,19 @@ void Shader::CompileShader(const char* vertexCode, const char* fragmentCode) {
     uniformProjection = glGetUniformLocation(shaderID, "projection");
     uniformView = glGetUniformLocation(shaderID, "view");
 
-    uniformDirectionLight.uniformColour = glGetUniformLocation(shaderID, "directionalLight.base.colour");
-    uniformDirectionLight.uniformAmbientIntensity = glGetUniformLocation(shaderID, "directionalLight.base.ambientIntensity");
-    uniformDirectionLight.uniformDiffuseIntensity = glGetUniformLocation(shaderID, "directionalLight.base.diffuseIntensity");
+    // Directional Light
+    uniformDirectionalLight.uniformColour = glGetUniformLocation(shaderID, "directionalLight.base.colour");
+    uniformDirectionalLight.uniformAmbientIntensity = glGetUniformLocation(shaderID, "directionalLight.base.ambientIntensity");
+    uniformDirectionalLight.uniformDiffuseIntensity = glGetUniformLocation(shaderID, "directionalLight.base.diffuseIntensity");
 	
-    uniformDirectionLight.uniformDirection = glGetUniformLocation(shaderID, "directionalLight.direction");
+    uniformDirectionalLight.uniformDirection = glGetUniformLocation(shaderID, "directionalLight.direction");
 
+    // Material
     uniformCameraPosition = glGetUniformLocation(shaderID, "cameraPosition");
     uniformSpecularIntensity = glGetUniformLocation(shaderID, "material.specularIntensity");
     uniformShininess = glGetUniformLocation(shaderID, "material.shininess");
 
+    // Point Lights
     uniformPointLightCount = glGetUniformLocation(shaderID, "pointLightCount");
 
     for (size_t i = 0; i < MAX_POINT_LIGHTS; i++) {
@@ -186,6 +205,39 @@ void Shader::CompileShader(const char* vertexCode, const char* fragmentCode) {
 
         snprintf(locationBuffer, sizeof(locationBuffer), "pointLights[%d].exponent", i);
         uniformPointLight[i].uniformExponent = glGetUniformLocation(shaderID, locationBuffer);
+    }
+
+    // Spot Light
+    uniformSpotLightCount = glGetUniformLocation(shaderID, "spotLightCount");
+
+    for (size_t i = 0; i < MAX_SPOT_LIGHTS; i++) {
+        char locationBuffer[100] = { '\0' };
+        snprintf(locationBuffer, sizeof(locationBuffer), "spotLights[%d].base.base.colour", i);
+        uniformSpotLight[i].uniformColour = glGetUniformLocation(shaderID, locationBuffer);
+
+        snprintf(locationBuffer, sizeof(locationBuffer), "spotLights[%d].base.base.ambientIntensity", i);
+        uniformSpotLight[i].uniformAmbientIntensity = glGetUniformLocation(shaderID, locationBuffer);
+
+        snprintf(locationBuffer, sizeof(locationBuffer), "spotLights[%d].base.base.diffuseIntensity", i);
+        uniformSpotLight[i].uniformDiffuseIntensity = glGetUniformLocation(shaderID, locationBuffer);
+
+        snprintf(locationBuffer, sizeof(locationBuffer), "spotLights[%d].base.position", i);
+        uniformSpotLight[i].uniformPosition = glGetUniformLocation(shaderID, locationBuffer);
+
+        snprintf(locationBuffer, sizeof(locationBuffer), "spotLights[%d].base.constant", i);
+        uniformSpotLight[i].uniformConstant = glGetUniformLocation(shaderID, locationBuffer);
+
+        snprintf(locationBuffer, sizeof(locationBuffer), "spotLights[%d].base.linear", i);
+        uniformSpotLight[i].uniformLinear = glGetUniformLocation(shaderID, locationBuffer);
+
+        snprintf(locationBuffer, sizeof(locationBuffer), "spotLights[%d].base.exponent", i);
+        uniformSpotLight[i].uniformExponent = glGetUniformLocation(shaderID, locationBuffer);
+
+        snprintf(locationBuffer, sizeof(locationBuffer), "spotLights[%d].direction", i);
+        uniformSpotLight[i].uniformDirection = glGetUniformLocation(shaderID, locationBuffer);
+
+        snprintf(locationBuffer, sizeof(locationBuffer), "spotLights[%d].edge", i);
+        uniformSpotLight[i].uniformEdge = glGetUniformLocation(shaderID, locationBuffer);
     }
 }
 
