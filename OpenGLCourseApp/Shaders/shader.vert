@@ -15,11 +15,13 @@ uniform mat4 view;
 
 void main()
 {
+	// Calculate the position
 	gl_Position = projection * view * model * vec4(pos, 1.0);
 	
 	TexCoord = tex;
 	
 	Normal = mat3(transpose(inverse(model))) * norm;
 
+	// Provide the fragment position to the fragment shader
 	FragPos = (model * vec4(pos, 1.0)).xyz;
 }

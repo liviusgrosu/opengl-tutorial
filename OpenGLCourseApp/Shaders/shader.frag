@@ -93,9 +93,9 @@ vec4 CalculatePointLight(PointLight pointLight)
 	float distance = length(direction);
 	direction = normalize(direction);
 	
-	vec4 colour = CalculateLightByDirection(pointLight[i].base, direction);
+	vec4 colour = CalculateLightByDirection(pointLight.base, direction);
 	float attenuation = pointLight.exponent * distance * distance +
-						pointLight.linear * pointLightCount +
+						pointLight.linear * distance +
 						pointLight.constant;
 	
 	return colour / attenuation;
@@ -108,8 +108,8 @@ vec4 CalculateSpotLight(SpotLight spotLight)
 	
 	if (spotlightFactor > spotLight.edge)
 	{
-		vec4 colour = CalculatePointLight(spotLight.base)
-		return colour;
+		vec4 colour = CalculatePointLight(spotLight.base);
+		return colour * (1.0f - (1.0f - spotlightFactor) * (1.0f / (1.0f - spotLight.edge)));
 	}
 	else
 	{
