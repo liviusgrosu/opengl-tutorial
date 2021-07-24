@@ -23,6 +23,7 @@
 #include "PointLight.h"
 #include "SpotLight.h"
 #include "Material.h"
+#include "Model.h"
 
 const float toRadians = 3.14159265f / 180.0f;
 
@@ -37,6 +38,8 @@ Texture plainTexture;
 
 Material shinyMaterial;
 Material dullMaterial;
+
+Model uh60;
 
 DirectionalLight mainLight;
 PointLight pointLights[MAX_POINT_LIGHTS];
@@ -159,14 +162,17 @@ int main()
 	mainCamera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 5.0f, 0.5f);
 
 	brickTexture = Texture((char*)"Textures/brick.png");
-	brickTexture.LoadTexture();
+	brickTexture.LoadTextureWithAlpha();
 	dirtTexture = Texture((char*)"Textures/dirt.png");
-	dirtTexture.LoadTexture();
+	dirtTexture.LoadTextureWithAlpha();
 	plainTexture = Texture((char*)"Textures/plain.png");
-	plainTexture.LoadTexture();
+	plainTexture.LoadTextureWithAlpha();
 
 	shinyMaterial = Material(4.0f, 32);
 	dullMaterial = Material(0.3f, 4);
+
+	uh60 = Model();
+	uh60.LoadModel("Models/uh60.obj");
 
 	mainLight = DirectionalLight(0.0f, 0.0f, 0.0f, 0.1f, 0.3f, 2.0f, -1.0f, -2.0f);
 
@@ -258,6 +264,14 @@ int main()
 		plainTexture.UseTexture();
 		shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		meshList[2]->RenderMesh();
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, -1.0f, 3.0f));
+		model = glm::rotate(model, -90.0f * toRadians, glm::vec3(1.1f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		uh60.RenderModel();
 
 		glUseProgram(0);
 
