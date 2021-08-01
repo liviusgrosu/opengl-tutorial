@@ -33,6 +33,7 @@ private:
 	GLfloat yaw;
 	GLfloat pitch;
 
+	GLfloat speedMultiplier;
 	GLfloat moveSpeed;
 	GLfloat turnSpeed;
 

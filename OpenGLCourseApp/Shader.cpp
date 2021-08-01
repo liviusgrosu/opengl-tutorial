@@ -17,11 +17,13 @@ void Shader::CreateFromString(const char* vertexCode, const char* fragmentCode)
 
 void Shader::CreateFromFiles(const char* vertexLocation, const char* fragmentLocation)
 {
+    // Get the code from their respective files
 	std::string vertexString = ReadFile(vertexLocation);
 	std::string fragmentString = ReadFile(fragmentLocation);
 	const char* vertexCode = vertexString.c_str();
 	const char* fragmentCode = fragmentString.c_str();
 
+    // Generate executables of the shaders
 	CompileShader(vertexCode, fragmentCode);
 }
 
@@ -120,6 +122,18 @@ void Shader::SetSpotLights(SpotLight* spotLight, unsigned int lightCount)
     }
 }
 
+void Shader::SetTexture(GLuint textureUnit) {
+    glUniform1i(uniformTexture, textureUnit);
+}
+
+void Shader::SetDirectionalShadowMap(GLuint textureUnit) {
+    glUniform1i(uniformDirectionalShadowMap, textureUnit);
+}
+
+void Shader::SetDirectionalLightTransform(glm::mat4* lightTransform) {
+    glUniformMatrix4fv(uniformDirectionalLightTransform, 1, GL_FALSE, glm::value_ptr(*lightTransform));
+}
+
 void Shader::UseShader() {
 	glUseProgram(shaderID);
 }
@@ -148,6 +162,7 @@ void Shader::CompileShader(const char* vertexCode, const char* fragmentCode) {
     GLint result = 0;
     GLchar errorLog[1024] = { 0 };
 
+    // Link the program and get log results
     glLinkProgram(shaderID);
     glGetProgramiv(shaderID, GL_LINK_STATUS, &result);
     if (!result) {
@@ -156,6 +171,7 @@ void Shader::CompileShader(const char* vertexCode, const char* fragmentCode) {
         return;
     }
 
+    // Validate the program and get log results
     glValidateProgram(shaderID);
     glGetProgramiv(shaderID, GL_VALIDATE_STATUS, &result);
     if (!result) {
@@ -239,6 +255,10 @@ void Shader::CompileShader(const char* vertexCode, const char* fragmentCode) {
         snprintf(locationBuffer, sizeof(locationBuffer), "spotLights[%d].edge", i);
         uniformSpotLight[i].uniformEdge = glGetUniformLocation(shaderID, locationBuffer);
     }
+
+    uniformTexture = glGetUniformLocation(shaderID, "theTexture");
+    uniformDirectionalLightTransform = glGetUniformLocation(shaderID, "directionalLightTransform");
+    uniformDirectionalShadowMap = glGetUniformLocation(shaderID, "directionalShadowMap");
 }
 
 void Shader::AddShader(GLuint program, const char* shaderCode, GLenum shaderType) {
@@ -249,12 +269,14 @@ void Shader::AddShader(GLuint program, const char* shaderCode, GLenum shaderType
     GLint codeLength[1];
     codeLength[0] = strlen(shaderCode);
 
+    // Compile the shader
     glShaderSource(mainShader, 1, glShaderCode, codeLength);
     glCompileShader(mainShader);
 
     GLint result = 0;
     GLchar errorLog[1024] = { 0 };
 
+    // Get the compile log result
     glGetShaderiv(mainShader, GL_COMPILE_STATUS, &result);
     if (!result) {
         glGetProgramInfoLog(mainShader, sizeof(errorLog), NULL, errorLog);
@@ -262,6 +284,7 @@ void Shader::AddShader(GLuint program, const char* shaderCode, GLenum shaderType
         return;
     }
 
+    // Supply the generated shader to the shader program object
     glAttachShader(program, mainShader);
 }
 

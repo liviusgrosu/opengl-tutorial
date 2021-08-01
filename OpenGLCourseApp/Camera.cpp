@@ -2,8 +2,7 @@
 
 Camera::Camera() {}
 
-Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, GLfloat startYaw, GLfloat startPitch, GLfloat startMoveSpeed, GLfloat startTurnSpeed)
-{
+Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, GLfloat startYaw, GLfloat startPitch, GLfloat startMoveSpeed, GLfloat startTurnSpeed) {
 	position = startPosition;
 	worldUp = startUp;
 	yaw = startYaw;
@@ -16,59 +15,60 @@ Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, GLfloat startYaw, GLf
 	update();
 }
 
-void Camera::keyControl(bool* keys, GLfloat deltaTime)
-{
-	GLfloat velocity = moveSpeed * deltaTime;
+void Camera::keyControl(bool* keys, GLfloat deltaTime) {
+	// Handle key controls
+	GLfloat velocity = moveSpeed * speedMultiplier * deltaTime;
 
-	if (keys[GLFW_KEY_W])
-	{
+	if (keys[GLFW_KEY_W]) {
 		position += front * velocity;
 	}
 
-	if (keys[GLFW_KEY_S])
-	{
+	if (keys[GLFW_KEY_S]) {
 		position -= front * velocity;
 	}
 
-	if (keys[GLFW_KEY_A])
-	{
+	if (keys[GLFW_KEY_A]) {
 		position -= right * velocity;
 	}
 
-	if (keys[GLFW_KEY_D])
-	{
+	if (keys[GLFW_KEY_D]) {
 		position += right * velocity;
+	}
+
+	if (keys[GLFW_KEY_LEFT_SHIFT]) {
+		speedMultiplier = 3.0f;
+	}
+	else
+	{
+		speedMultiplier = 0.5f;
 	}
 }
 
-void Camera::mouseControl(GLfloat xChange, GLfloat yChange)
-{
+void Camera::mouseControl(GLfloat xChange, GLfloat yChange) {
+	// Handle camera controls
 	xChange *= turnSpeed;
 	yChange *= turnSpeed;
 
 	yaw += xChange;
 	pitch += yChange;
 
-	if (pitch > 89.0f)
-	{
+	if (pitch > 89.0f) {
 		pitch = 89.0f;
 	}
 
-	if (pitch < -89.0f)
-	{
+	if (pitch < -89.0f) {
 		pitch = -89.0f;
 	}
 
 	update();
 }
 
-glm::mat4 Camera::CalculateViewMatrix()
-{
+glm::mat4 Camera::CalculateViewMatrix() {
 	return glm::lookAt(position, position + front, up);
 }
 
-void Camera::update()
-{
+void Camera::update() {
+	// Calculate the camera axis in relation to itself
 	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
 	front.y = sin(glm::radians(pitch));
 	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
@@ -79,6 +79,4 @@ void Camera::update()
 }
 
 
-Camera::~Camera()
-{
-}
+Camera::~Camera() {}

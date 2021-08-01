@@ -55,6 +55,7 @@ int GLWindow::Initialize() {
 
     glEnable(GL_DEPTH_TEST);
 
+    // How much of the screen space is available to OpenGL
     glViewport(0, 0, bufferWidth, bufferHeight);
     
     glfwSetWindowUserPointer(mainWindow, this);
