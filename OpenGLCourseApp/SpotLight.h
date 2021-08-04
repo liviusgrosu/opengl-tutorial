@@ -20,6 +20,7 @@ public:
 					GLuint edgeLocation);
 	
 	void SetFlash(glm::vec3 position, glm::vec3 direction);
+	void Toggle() { isOn = !isOn; }
 
 	~SpotLight();
 
@@ -28,5 +29,7 @@ private:
 
 	GLfloat edge;
 	GLfloat processedEdge;
+
+	bool isOn;
 };
 
